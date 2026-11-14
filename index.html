@@ -49,8 +49,8 @@
             <div class="profile-info">
               <div class="display-name" id="displayName"></div>
               <ul class="stats">
-                <li><b id="statPosts">0</b><span>publicaciones</span></li>
-                <li><b id="statFollowers">0</b><span>seguidores</span></li>
+                <li><b id="statPosts">0</b><span id="statPostsLabel">publicaciones</span></li>
+                <li><b id="statFollowers">0</b><span id="statFollowersLabel">seguidores</span></li>
                 <li><b id="statFollowing">0</b><span>seguidos</span></li>
               </ul>
             </div>
@@ -92,8 +92,6 @@
     </div>
 
     <input type="file" id="fileInput" accept="image/*" multiple hidden />
-    <input type="file" id="replaceInput" accept="image/*" hidden />
-    <input type="file" id="avatarInput" accept="image/*" hidden />
 
     <!-- Editar perfil -->
     <dialog class="sheet" id="profileDialog" aria-labelledby="profileTitle">
@@ -109,6 +107,8 @@
             <button type="button" class="link strong" id="changeAvatarBtn">Cambiar foto</button>
             <button type="button" class="link danger" id="removeAvatarBtn">Quitar</button>
           </div>
+          <!-- Dentro del diálogo: lo de fuera queda inerte mientras está abierto. -->
+          <input type="file" id="avatarInput" accept="image/*" hidden />
         </div>
         <label class="field">
           <span>Usuario</span>
@@ -174,6 +174,7 @@
           <button type="button" class="btn" id="replaceBtn">Reemplazar</button>
           <button type="button" class="btn btn-danger" id="deleteBtn">Eliminar</button>
         </div>
+        <input type="file" id="replaceInput" accept="image/*" hidden />
       </div>
     </dialog>
 

@@ -107,13 +107,16 @@ function confirmAction(message, okLabel = 'Borrar') {
   $('confirmMsg').textContent = message;
   $('confirmOk').textContent = okLabel;
   return new Promise((resolve) => {
-    let result = false;
-    $('confirmOk').onclick = () => {
-      result = true;
-      dialog.close();
+    // Los botones resuelven directamente; el evento «close» solo cubre Esc y el toque fuera.
+    const finish = (result) => {
+      dialog.removeEventListener('close', onClose);
+      if (dialog.open) dialog.close();
+      resolve(result);
     };
-    $('confirmCancel').onclick = () => dialog.close();
-    dialog.addEventListener('close', () => resolve(result), { once: true });
+    const onClose = () => finish(false);
+    $('confirmOk').onclick = () => finish(true);
+    $('confirmCancel').onclick = () => finish(false);
+    dialog.addEventListener('close', onClose);
     dialog.showModal();
   });
 }
@@ -139,6 +142,7 @@ function renderProfile() {
   $('bio').textContent = p.bio;
   $('bio').hidden = !p.bio;
   $('statFollowers').textContent = p.followers || '0';
+  $('statFollowersLabel').textContent = p.followers === '1' ? 'seguidor' : 'seguidores';
   $('statFollowing').textContent = p.following || '0';
   renderAvatar($('avatarBtn'), p.avatar);
 }
@@ -227,6 +231,7 @@ function renderGrid() {
   $('empty').hidden = count > 0;
   $('gridHint').hidden = count === 0;
   $('statPosts').textContent = count;
+  $('statPostsLabel').textContent = count === 1 ? 'publicación' : 'publicaciones';
 }
 
 let dragging = false;
@@ -249,7 +254,14 @@ Sortable.create(grid, {
       .map((cell) => cell.dataset.id)
       .filter((id, i, all) => state.photos.has(id) && all.indexOf(id) === i);
     saveOrder();
-    setTimeout(() => (dragging = false), 60);
+    setTimeout(() => {
+      dragging = false;
+      // Sortable marca «ignorar el próximo clic» al empezar un arrastre y solo lo
+      // desmarca si la foto pasa sobre otra. En táctil (iPhone) no llega ningún clic
+      // tras soltar, así que la marca se quedaba puesta y se comía el siguiente toque
+      // real. Este clic inocuo sobre el documento la consume.
+      document.dispatchEvent(new MouseEvent('click', { cancelable: true }));
+    }, 60);
   },
 });
 
@@ -273,38 +285,56 @@ grid.addEventListener('contextmenu', (e) => e.preventDefault());
 
 const isImage = (file) => file.type.startsWith('image/') || /\.(heic|heif|avif)$/i.test(file.name);
 
-let adding = false;
+let addQueue = Promise.resolve();
 
-async function addFiles(fileList) {
-  const files = [...fileList].filter(isImage);
-  if (!files.length || adding) return;
-  adding = true;
+function addFiles(fileList) {
+  const all = [...fileList];
+  const files = all.filter(isImage);
+  if (!files.length) {
+    if (all.length) showToast('Solo se pueden añadir imágenes');
+    return;
+  }
+  // En cola: si llegan más fotos mientras se procesan otras, no se pierden.
+  addQueue = addQueue.then(() => addBatch(files)).catch(() => {});
+}
+
+async function addBatch(files) {
   showToast(files.length === 1 ? 'Añadiendo foto…' : `Añadiendo ${files.length} fotos…`, {
     duration: 0,
   });
 
   const added = [];
   let failed = 0;
+  let unsaved = 0;
   for (const file of files) {
+    let processed;
     try {
-      const { blob, w, h } = await processImage(file);
-      const record = { id: newId(), blob, w, h, posX: 50, posY: 50 };
-      await db.putPhoto(record);
-      register(record);
-      added.push(record.id);
+      processed = await processImage(file);
     } catch {
       failed++;
+      continue;
     }
+    const record = { id: newId(), ...processed, posX: 50, posY: 50 };
+    try {
+      await db.putPhoto(record);
+    } catch {
+      unsaved++; // sin almacenamiento: la foto se queda solo en esta sesión
+    }
+    register(record);
+    added.push(record.id);
   }
 
   // Las nuevas van al principio, como una publicación recién subida.
   state.order = [...added, ...state.order];
   saveOrder();
   renderGrid();
-  adding = false;
   navigator.storage?.persist?.().catch(() => {});
 
-  if (failed && !added.length) {
+  if (unsaved) {
+    showToast('No se han podido guardar en este dispositivo: se perderán al cerrar la página', {
+      duration: 7000,
+    });
+  } else if (failed && !added.length) {
     showToast(failed === 1 ? 'No se pudo leer esa imagen' : 'No se pudieron leer esas imágenes');
   } else if (failed) {
     showToast(
@@ -385,7 +415,11 @@ let pan = null;
 frame.addEventListener('pointerdown', (e) => {
   const photo = currentPhoto();
   if (!photo) return;
-  frame.setPointerCapture(e.pointerId);
+  try {
+    frame.setPointerCapture(e.pointerId);
+  } catch {
+    // Sin captura el arrastre sigue funcionando mientras el puntero no salga del marco.
+  }
   frame.classList.add('panning');
   pan = { x: e.clientX, y: e.clientY, posX: photo.posX, posY: photo.posY, over: overflow(photo) };
 });
@@ -412,6 +446,9 @@ function endPan() {
 
 frame.addEventListener('pointerup', endPan);
 frame.addEventListener('pointercancel', endPan);
+frame.addEventListener('lostpointercapture', endPan);
+// Si el diálogo se cierra a mitad de un arrastre (Esc), no debe quedar un arrastre colgado.
+photoDialog.addEventListener('close', endPan);
 
 $('moveFirstBtn').addEventListener('click', () => {
   state.order = [currentId, ...state.order.filter((id) => id !== currentId)];
@@ -487,6 +524,10 @@ function applyTheme() {
   const { theme } = state.settings;
   if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme;
   else delete document.documentElement.dataset.theme;
+  // La barra del navegador móvil debe seguir el tema elegido, no solo el del sistema.
+  const metas = document.querySelectorAll('meta[name="theme-color"]');
+  const fixed = { light: '#ffffff', dark: '#000000' }[theme];
+  metas.forEach((meta, i) => (meta.content = fixed ?? (i === 0 ? '#ffffff' : '#000000')));
   for (const btn of $('themeSeg').children) {
     btn.setAttribute('aria-pressed', String(btn.dataset.themeValue === theme));
   }
@@ -508,8 +549,10 @@ $('clearBtn').addEventListener('click', async () => {
     $('menuDialog').close();
     return;
   }
+  const what =
+    state.order.length === 1 ? 'la única foto' : `las ${state.order.length} fotos`;
   const ok = await confirmAction(
-    `¿Borrar las ${state.order.length} fotos del feed? Esta acción no se puede deshacer.`,
+    `¿Borrar ${what} del feed? Esta acción no se puede deshacer.`,
     'Borrar todo',
   );
   if (!ok) return;
