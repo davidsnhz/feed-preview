@@ -1,0 +1,18 @@
+{
+  "name": "feed-preview",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Previsualiza cómo quedarían tus fotos en el feed de tu perfil.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "sortablejs": "^1.15.7"
+  },
+  "devDependencies": {
+    "vite": "^8.3.8"
+  }
+}
