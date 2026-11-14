@@ -2,6 +2,8 @@
 
 Aplicación web para ver cómo quedarían tus fotos en el feed de tu perfil antes de publicarlas. Gratis, sin registro y sin funciones de pago.
 
+**Abrir la app:** https://feed-preview-eosin.vercel.app
+
 ## Qué hace
 
 - Sube una o varias fotos desde tu galería (o arrástralas / pégalas en el ordenador).
