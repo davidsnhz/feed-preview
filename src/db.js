@@ -8,16 +8,36 @@ function open() {
   dbPromise ??= new Promise((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, 1);
     req.onupgradeneeded = () => req.result.createObjectStore(STORE, { keyPath: 'id' });
-    req.onsuccess = () => resolve(req.result);
+    req.onsuccess = () => {
+      const db = req.result;
+      // Si el navegador cierra la conexión (pasa en móviles al dejar la app en
+      // segundo plano), se descarta para que la siguiente operación la reabra.
+      db.onclose = db.onversionchange = () => {
+        db.close();
+        dbPromise = undefined;
+      };
+      resolve(db);
+    };
     req.onerror = () => reject(req.error);
+  }).catch((error) => {
+    dbPromise = undefined; // permite reintentar más tarde
+    throw error;
   });
   return dbPromise;
 }
 
-async function run(mode, fn) {
+async function run(mode, fn, retry = true) {
   const db = await open();
+  let tx;
+  try {
+    tx = db.transaction(STORE, mode);
+  } catch (error) {
+    // Conexión muerta: se reabre y se reintenta una vez.
+    dbPromise = undefined;
+    if (!retry) throw error;
+    return run(mode, fn, false);
+  }
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE, mode);
     const req = fn(tx.objectStore(STORE));
     tx.oncomplete = () => resolve(req?.result);
     tx.onerror = tx.onabort = () => reject(tx.error);

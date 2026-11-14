@@ -68,6 +68,11 @@
 
 html {
   -webkit-text-size-adjust: 100%;
+  touch-action: manipulation; /* sin zoom por doble toque al pulsar botones seguidos */
+}
+
+.cell:focus-visible {
+  outline-offset: -2px;
 }
 
 body {
@@ -364,8 +369,13 @@ textarea:focus-visible {
 
 /* ---------- Estado vacío ---------- */
 
+/* Cuadrícula fantasma y mensaje comparten celda: el bloque crece con el más alto. */
 .empty {
-  position: relative;
+  display: grid;
+}
+
+.empty > * {
+  grid-area: 1 / 1;
 }
 
 .ghost-grid .cell {
@@ -373,8 +383,7 @@ textarea:focus-visible {
 }
 
 .empty-card {
-  position: absolute;
-  inset: 0;
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
