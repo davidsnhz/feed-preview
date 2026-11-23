@@ -103,7 +103,7 @@ textarea:focus-visible {
   outline-offset: 2px;
 }
 
-/* ---------- Estructura ---------- */
+/* Estructura */
 
 .app {
   max-width: 470px;
@@ -170,7 +170,7 @@ textarea:focus-visible {
   background: var(--surface);
 }
 
-/* ---------- Perfil ---------- */
+/* Perfil */
 
 .profile {
   padding: 8px 16px 14px;
@@ -296,7 +296,7 @@ textarea:focus-visible {
   color: var(--danger);
 }
 
-/* ---------- Pestañas (formato) ---------- */
+/* Pestañas (formato) */
 
 .tabs {
   display: flex;
@@ -320,7 +320,7 @@ textarea:focus-visible {
   border-bottom-color: var(--fg);
 }
 
-/* ---------- Cuadrícula ---------- */
+/* Cuadrícula */
 
 .grid {
   display: grid;
@@ -367,7 +367,7 @@ textarea:focus-visible {
   font-size: 13px;
 }
 
-/* ---------- Estado vacío ---------- */
+/* Estado vacío */
 
 /* Cuadrícula fantasma y mensaje comparten celda: el bloque crece con el más alto. */
 .empty {
@@ -409,7 +409,7 @@ textarea:focus-visible {
   padding: 0 22px;
 }
 
-/* ---------- Hojas (diálogos) ---------- */
+/* Hojas (diálogos) */
 
 dialog.sheet {
   width: 100%;
@@ -634,7 +634,7 @@ dialog.sheet[open] {
   text-align: center;
 }
 
-/* ---------- Aviso ---------- */
+/* Aviso */
 
 .toast {
   position: fixed;

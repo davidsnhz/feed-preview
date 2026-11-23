@@ -18,7 +18,7 @@ const DEFAULT_PROFILE = {
 };
 const DEFAULT_SETTINGS = { ratio: '3:4', theme: 'auto' };
 
-// ---------- Estado ----------
+// Estado
 
 function loadJSON(key, fallback) {
   try {
@@ -62,7 +62,7 @@ function register(record) {
   return photo;
 }
 
-// ---------- Aviso (toast) ----------
+// Aviso (toast)
 
 const toast = $('toast');
 let toastTimer;
@@ -88,7 +88,7 @@ function showToast(message, { action, onAction, duration = 3200 } = {}) {
   if (duration) toastTimer = setTimeout(hideToast, duration);
 }
 
-// ---------- Diálogos ----------
+// Diálogos
 
 for (const dialog of document.querySelectorAll('dialog')) {
   // Cierra al tocar fuera, pero solo si el toque empezó fuera (no al soltar un arrastre).
@@ -121,7 +121,7 @@ function confirmAction(message, okLabel = 'Borrar') {
   });
 }
 
-// ---------- Perfil ----------
+// Perfil
 
 function renderAvatar(el, dataUrl) {
   if (dataUrl) {
@@ -203,7 +203,7 @@ $('profileForm').addEventListener('submit', (e) => {
   $('profileDialog').close();
 });
 
-// ---------- Cuadrícula ----------
+// Cuadrícula
 
 const grid = $('grid');
 
@@ -281,7 +281,7 @@ grid.addEventListener('keydown', (e) => {
 
 grid.addEventListener('contextmenu', (e) => e.preventDefault());
 
-// ---------- Añadir fotos ----------
+// Añadir fotos
 
 const isImage = (file) => file.type.startsWith('image/') || /\.(heic|heif|avif)$/i.test(file.name);
 
@@ -371,7 +371,7 @@ window.addEventListener('paste', (e) => {
   if (e.clipboardData?.files.length) addFiles(e.clipboardData.files);
 });
 
-// ---------- Foto: encuadre, reemplazar, mover, eliminar ----------
+// Foto: encuadre, reemplazar, mover, eliminar
 
 const photoDialog = $('photoDialog');
 const frame = $('photoFrame');
@@ -500,7 +500,7 @@ $('deleteBtn').addEventListener('click', async () => {
   });
 });
 
-// ---------- Formato de la cuadrícula ----------
+// Formato de la cuadrícula
 
 function applyRatio() {
   const { ratio } = state.settings;
@@ -518,7 +518,7 @@ for (const tab of document.querySelectorAll('.tab')) {
   });
 }
 
-// ---------- Opciones ----------
+// Opciones
 
 function applyTheme() {
   const { theme } = state.settings;
@@ -622,7 +622,7 @@ $('exportBtn').addEventListener('click', async () => {
   }
 });
 
-// ---------- Arranque ----------
+// Arranque
 
 async function init() {
   applyTheme();
